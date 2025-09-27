@@ -1,24 +1,9 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from "dotenv";
 dotenv.config();
 
-const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.0-flash",  
-  apiKey: process.env.GOOGLE_API_KEY,
-  temperature: 0.7
-});
-
-
-function getText(response) {
-  if (!response) return "";
-  if (typeof response.content === "string") {
-    return response.content; // already plain text
-  }
-  if (Array.isArray(response.content) && response.content[0]?.text) {
-    return response.content[0].text;
-  }
-  return "";
-}
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Generate Quiz
 export async function generateQuiz(topic) {
@@ -39,9 +24,9 @@ Return ONLY JSON in this format:
 `;
 
   try {
-    const response = await llm.invoke(prompt);
-
-    const text = getText(response).replace(/```json|```/g, "").trim();
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().replace(/```json|```/g, "").trim();
     return JSON.parse(text);
   } catch (err) {
     console.error("Quiz generation error:", err);
@@ -60,9 +45,9 @@ Give a short motivational feedback message in plain text (not JSON).
 `;
 
   try {
-    const response = await llm.invoke(prompt);
-
-    const message = getText(response).replace(/```/g, "").trim();
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const message = response.text().replace(/```/g, "").trim();
     return { message };
   } catch (err) {
     console.error("Feedback generation error:", err);
